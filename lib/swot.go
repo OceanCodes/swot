@@ -1,4 +1,3 @@
-// Package main is the main package of the SWOT service
 package main
 
 import (
@@ -88,8 +87,10 @@ func isAcademic(uri string) bool {
 	if _, found := blacklist[domain]; found {
 		return false
 	}
-
-	if _, found := whitelist[domain]; found {
+	
+	if domainName, err := publicsuffix.Parse(domain); err != nil {
+		return false
+	} else if _, found := whitelist[domainName.TLD]; found {
 		return true
 	}
 
