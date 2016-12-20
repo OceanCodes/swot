@@ -1,0 +1,68 @@
+machine:
+  services:
+    - docker
+  environment:
+    ORG_PATH: "../.go_workspace/src/github.com/$CIRCLE_PROJECT_USERNAME"
+    REPO_PATH: "$ORG_PATH/$CIRCLE_PROJECT_REPONAME"
+
+dependencies:
+  pre:
+    # copy repo to go path
+    - rm -rf $REPO_PATH
+    - mkdir -p $ORG_PATH
+    - cp -R $HOME/$CIRCLE_PROJECT_REPONAME $ORG_PATH
+    # download and cache jq tool
+    - |
+        if [[ ! -e jq/jq ]]; then
+            mkdir -p jq
+            curl -sfSL -o jq/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+            chmod +x jq/jq
+        fi
+  cache_directories:
+    - jq
+  override:
+    # get dependencies (force update only on master; otherwise if on a branch 'go get -u' will switch us to master)
+    - |
+        if [ "${CIRCLE_BRANCH}" = 'master' ]; then
+            cd $REPO_PATH && go get -d -v -u ./...
+        else
+            cd $REPO_PATH && go get -d -v ./...
+        fi
+    # build service and client executables
+    - make service:
+        pwd: $REPO_PATH
+
+test:
+  pre:
+    # get the go-test-to-junit-xml converter
+    - go get -u github.com/jstemmer/go-junit-report
+    # prepare test output directory
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit
+  override:
+    # run the tests; make sure test output goes to stdout
+    - set -o pipefail; make test | tee $CIRCLE_TEST_REPORTS/output:
+        pwd: $REPO_PATH
+    # create junit xml from test output that circle ci can consume
+    - cat $CIRCLE_TEST_REPORTS/output | go-junit-report > $CIRCLE_TEST_REPORTS/junit/report.xml
+
+deployment:
+  docker-image:
+    branch: master
+    commands:
+      # build docker image
+      - make image:
+          pwd: $REPO_PATH
+      # install latest aws-cli tool with support for ecr
+      - sudo pip install -U awscli
+      # push to docker image registry
+      - make push
+  docker-image-branch:
+    branch: /^((?!master).)*$/  # not the master branch
+    commands:
+      # build docker image
+      - make image-branch:
+          pwd: $REPO_PATH
+      # install latest aws-cli tool with support for ecr
+      - sudo pip install -U awscli
+      # push to docker image registry
+      - make push-branch
