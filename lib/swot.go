@@ -34,7 +34,7 @@ func loadTLDs(filename string) (list map[string]struct{}) {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatalln("Error loading TLDs file:", err)
+		log.Fatalln("Error loading TLD file:", err)
 	}
 	defer file.Close()
 
@@ -54,7 +54,7 @@ func loadTLDs(filename string) (list map[string]struct{}) {
 	}
 
 	if len(list) == 0 {
-		log.Fatalln("Error parsing TLDs file")
+		log.Fatalln("Error parsing TLD file")
 	}
 
 	return
@@ -87,7 +87,7 @@ func isAcademic(uri string) bool {
 	if _, found := blacklist[domain]; found {
 		return false
 	}
-	
+
 	if domainName, err := publicsuffix.Parse(domain); err != nil {
 		return false
 	} else if _, found := whitelist[domainName.TLD]; found {
