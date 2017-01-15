@@ -52,8 +52,6 @@ deployment:
       # build docker image
       - make image:
           pwd: $REPO_PATH
-      # install latest aws-cli tool with support for ecr
-      - sudo pip install -U awscli
       # push to docker image registry
       - make push
   docker-image-branch:
@@ -62,7 +60,5 @@ deployment:
       # build docker image
       - make image-branch:
           pwd: $REPO_PATH
-      # install latest aws-cli tool with support for ecr
-      - sudo pip install -U awscli
       # push to docker image registry
       - make push-branch
