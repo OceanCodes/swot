@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/weppos/publicsuffix-go/publicsuffix"
@@ -19,13 +20,16 @@ var whitelist, blacklist map[string]struct{}
 func main() {
 
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
-	log.Println("Starting SWOT Service...")
+	log.Println("swot [STARTUP] Starting SWOT Service...")
+	log.Println("swot [STARTUP] Listening and serving HTTP on " + fmt.Sprintf(":%v", port))
 
 	whitelist = loadTLDs("swot/academic_tlds.rb")
 	blacklist = loadTLDs("swot.rb")
 
 	gin.SetMode(gin.ReleaseMode)
-	engine := gin.Default()
+	engine := gin.New()
+	engine.Use(Logger())
+	engine.Use(gin.Recovery())
 	engine.GET("/*uri", isAcademicWrapper)
 	engine.Run(fmt.Sprintf(":%v", port))
 }
@@ -107,4 +111,29 @@ func domainToPath(domain string) string {
 	}
 
 	return fmt.Sprintf("domains/%v.txt", strings.Join(parts, "/"))
+}
+
+// Logger is a logging middleware for gin
+func Logger() gin.HandlerFunc {
+
+	return func(ctx *gin.Context) {
+		// Start timer
+		start := time.Now()
+		path := ctx.Request.URL.Path
+		query := ctx.Request.URL.RawQuery
+
+		// Process request
+		ctx.Next()
+
+		// Stop timer
+		end := time.Now()
+		latency := end.Sub(start)
+
+		// Collect information
+		clientIP := ctx.ClientIP()
+		method := ctx.Request.Method
+		statusCode := ctx.Writer.Status()
+
+		log.Printf("%v [GIN] %3d %7.3f ms %s %s %-7s %s %s", "swot", statusCode, latency.Seconds()*1000, clientIP, "internal", method, path, query)
+	}
 }
