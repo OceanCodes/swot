@@ -40,3 +40,6 @@ push-branch:
 		`aws ecr get-login --region us-east-1`; \
 		docker push $(REGISTRY)/$(IMAGE_NAME):$(BRANCH) | cat; \
 	fi
+
+lint:
+	gometalinter ./...
