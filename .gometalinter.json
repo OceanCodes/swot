@@ -1,0 +1,6 @@
+{
+    "Enable": ["vet", "golint", "ineffassign", "goconst", "deadcode"],
+    "Exclude": ["if block ends with a return statement"],
+    "Test": true,
+    "Vendor": true
+}
