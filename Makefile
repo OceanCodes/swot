@@ -1,4 +1,4 @@
-.PHONY: service test image image-branch push push-branch
+.PHONY: all service test image image-branch ecr-login push push-branch lint
 
 all: service test
 
@@ -20,7 +20,7 @@ test:
 image:
 	cd $(DIR) && \
 	docker build -t $(IMAGE_NAME) .
-	docker tag -f $(IMAGE_NAME):latest $(REGISTRY)/$(IMAGE_NAME):latest
+	docker tag $(IMAGE_NAME):latest $(REGISTRY)/$(IMAGE_NAME):latest
 	if [ -n "$(TAG)" ]; then docker tag $(IMAGE_NAME):latest $(REGISTRY)/$(IMAGE_NAME):$(TAG); fi
 
 image-branch:
@@ -28,17 +28,18 @@ image-branch:
 		cd $(DIR) && docker build -t $(REGISTRY)/$(IMAGE_NAME):$(BRANCH) .; \
 	fi
 
-push:
+ecr-login:
+	`aws ecr get-login --region us-east-1 --no-include-email`
+
+push: ecr-login
 	if [ -n "$(TAG)" ]; then \
-		`aws ecr get-login --region us-east-1`; \
-		docker push $(REGISTRY)/$(IMAGE_NAME):latest | cat; \
-		docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG) | cat; \
+		docker push $(REGISTRY)/$(IMAGE_NAME):latest; \
+		docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG); \
 	fi
 
-push-branch:
+push-branch: ecr-login
 	if [ -n "$(BRANCH)" ]; then \
-		`aws ecr get-login --region us-east-1`; \
-		docker push $(REGISTRY)/$(IMAGE_NAME):$(BRANCH) | cat; \
+		docker push $(REGISTRY)/$(IMAGE_NAME):$(BRANCH); \
 	fi
 
 lint:
