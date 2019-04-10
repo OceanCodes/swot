@@ -7,3 +7,6 @@ Gemfile.lock
 # Binary artifacts
 lib/lib
 lib/swot-go
+
+# Folders
+vendor/

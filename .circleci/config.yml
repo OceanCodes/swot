@@ -1,0 +1,76 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: codeocean/build-golang:1.10
+
+    working_directory: /go/src/github.com/OceanCodes/swot
+
+    environment:
+      TEST_RESULTS: /tmp/test-results
+
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: mkdir -p $TEST_RESULTS
+
+      - restore_cache:
+          keys:
+            - v1-pkg-cache
+
+      - run:
+          name: create the 'vendor' folder
+          command: dep ensure -vendor-only
+
+      - run:
+          name: lint
+          command: make lint
+
+      - run:
+          name: build service
+          command: make service
+
+      - run:
+          name: run unit tests
+          command: |
+            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
+            go test -v -coverprofile=${TEST_RESULTS}/cover.out ./... | tee ${TEST_RESULTS}/go-test.out
+            go tool cover -html=${TEST_RESULTS}/cover.out -o=${TEST_RESULTS}/coverage.html
+
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: raw-test-output
+
+      - store_test_results:
+          path: /tmp/test-results
+
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - "/go/pkg"
+
+      - run:
+          name: create docker image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+                make image
+            else
+                make image-branch
+            fi
+
+      - deploy:
+          name: push docker image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+                make push
+            else
+                make push-branch
+            fi
+
+      - deploy:
+          name: trigger sanity checks
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+                ./trigger_sanity.sh
+            fi
