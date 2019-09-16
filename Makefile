@@ -43,4 +43,4 @@ push-branch: ecr-login
 	fi
 
 lint:
-	gometalinter ./...
+	golangci-lint run
