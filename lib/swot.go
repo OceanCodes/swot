@@ -31,7 +31,10 @@ func main() {
 	engine.Use(Logger())
 	engine.Use(gin.Recovery())
 	engine.GET("/*uri", isAcademicWrapper)
-	engine.Run(fmt.Sprintf(":%v", port))
+	err := engine.Run(fmt.Sprintf(":%v", port))
+	if err != nil {
+		log.Println("swot CRITICAL [STARTUP] Failed starting server:", err)
+	}
 }
 
 func loadTLDs(filename string) (list map[string]struct{}) {
