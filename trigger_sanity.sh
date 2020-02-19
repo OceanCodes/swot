@@ -2,5 +2,4 @@
 set -x
 
 curl -X POST https://circleci.com/api/v2/project/gh/OceanCodes/sanity/pipeline?circle-token=$CIRCLE_TOKEN \
-	-H "Content-Type: application/json" \
-	--data-binary "{\"parameters\": {\"build_target\": \"$1\"}}"
+	-H "Content-Type: application/json"
