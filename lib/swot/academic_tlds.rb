@@ -159,7 +159,6 @@ class Swot
     edu.pe
     edu.ph
     edu.pk
-    edu.pl
     edu.pr
     edu.ps
     edu.pt
