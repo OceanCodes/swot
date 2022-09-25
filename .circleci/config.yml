@@ -66,7 +66,21 @@ jobs:
 
       - run:
           name: Create Docker image
-          command: make image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ "${CIRCLE_BRANCH}" == "main" ]; then
+                make image
+            else
+                make image-branch
+            fi      
+
+       - deploy:
+          name: push docker image
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ "${CIRCLE_BRANCH}" == "main" ]; then
+                make push
+            else
+                make push-branch
+            fi
 
       - deploy:
           name: Trigger sanity checks
