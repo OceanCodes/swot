@@ -73,8 +73,8 @@ jobs:
                 make image-branch
             fi      
 
-       - deploy:
-          name: push docker image
+      - deploy:
+          name: Push Docker image
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ] || [ "${CIRCLE_BRANCH}" == "main" ]; then
                 make push
