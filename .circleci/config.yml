@@ -16,12 +16,6 @@ jobs:
   build:
     docker:
       - image: codeocean/build-golang:1.16
-      - image: couchdb:1.6.1
-      - image: opensearchproject/opensearch:1.1.0
-        environment:
-            plugins.security.disabled: true
-            discovery.type: "single-node"
-      - image: redis:5.0.6
 
     working_directory: /go/src/github.com/OceanCodes/swot
 
