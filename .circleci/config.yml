@@ -52,10 +52,6 @@ jobs:
           command: make service
 
       - run:
-          name: Build client
-          command: make client
-
-      - run:
           name: Run unit tests
           command: |
             trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
