@@ -1,9 +1,27 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.4
+
+workflows:
+   build:
+     jobs:
+       - build:
+           context:
+            - aws-creds
+            - circleci-creds
+            - slack-creds
+
 jobs:
   build:
     docker:
-      - image: codeocean/build-golang:1.13
+      - image: codeocean/build-golang:1.16
+      - image: couchdb:1.6.1
+      - image: opensearchproject/opensearch:1.1.0
+        environment:
+            plugins.security.disabled: true
+            discovery.type: "single-node"
+      - image: redis:5.0.6
 
     working_directory: /go/src/github.com/OceanCodes/swot
 
@@ -12,29 +30,33 @@ jobs:
 
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.11
       - run: mkdir -p $TEST_RESULTS
 
-      - setup_remote_docker:
-          version: 18.09.3
+      - run:
+          name: Shorten commit sha1
+          command: |
+            echo 'export SHA_SHORT=$(echo ${CIRCLE_SHA1} | cut -c1-7)' >> $BASH_ENV
 
       - restore_cache:
           keys:
-            - v1-pkg-cache
+            - go-mod-v1-{{ checksum "go.sum" }}
 
       - run:
-          name: create the 'vendor' folder
-          command: dep ensure -vendor-only
+          name: Lint
+          command: golangci-lint run --modules-download-mode=readonly
 
       - run:
-          name: lint
-          command: make lint
-
-      - run:
-          name: build service
+          name: Build service
           command: make service
 
       - run:
-          name: run unit tests
+          name: Build client
+          command: make client
+
+      - run:
+          name: Run unit tests
           command: |
             trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
             go test -v -coverprofile=${TEST_RESULTS}/cover.out ./... | tee ${TEST_RESULTS}/go-test.out
@@ -48,31 +70,47 @@ jobs:
           path: /tmp/test-results
 
       - save_cache:
-          key: v1-pkg-cache
+          key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
-            - "/go/pkg"
+            - "/go/pkg/mod"
 
       - run:
-          name: create docker image
-          command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-                make image
-            else
-                make image-branch
-            fi
+          name: Create Docker image
+          command: make image
 
       - deploy:
-          name: push docker image
+          name: Trigger sanity checks
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-                make push
-            else
-                make push-branch
-            fi
-
-      - deploy:
-          name: trigger sanity checks
-          command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" ] || [ "${CIRCLE_BRANCH}" == "main" ]; then
                 ./trigger_sanity.sh
             fi
+
+      - slack/notify:
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":x: Failed: ${CIRCLE_USERNAME}'s workflow (<${CIRCLE_BUILD_URL}|${CIRCLE_JOB}>) in <https://github.com/OceanCodes/${CIRCLE_PROJECT_REPONAME}|OceanCodes/${CIRCLE_PROJECT_REPONAME}> (<https://app.circleci.com/pipelines/github/OceanCodes/${CIRCLE_PROJECT_REPONAME}?branch=${CIRCLE_BRANCH}|${CIRCLE_BRANCH}>)\n- Commit <https://github.com/OceanCodes/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}|${SHA_SHORT}>"
+                  }
+                }
+              ]
+            }
+
+      - slack/notify:
+          event: pass
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":white_check_mark: Success: ${CIRCLE_USERNAME}'s workflow (<${CIRCLE_BUILD_URL}|${CIRCLE_JOB}>) in <https://github.com/OceanCodes/${CIRCLE_PROJECT_REPONAME}|OceanCodes/${CIRCLE_PROJECT_REPONAME}> (<https://app.circleci.com/pipelines/github/OceanCodes/${CIRCLE_PROJECT_REPONAME}?branch=${CIRCLE_BRANCH}|${CIRCLE_BRANCH}>)\n- Commit <https://github.com/OceanCodes/${CIRCLE_PROJECT_REPONAME}/commit/${CIRCLE_SHA1}|${SHA_SHORT}>"
+                  }
+                }
+              ]
+            }
