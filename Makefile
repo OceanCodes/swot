@@ -24,12 +24,12 @@ show-tag:
 service:
 	cd lib && \
 	for arch in amd64 arm64; do \
-		CGO_ENABLED=0 GOOS=linux GOARCH=$${arch} go build -o $(SERVICE_NAME).$${arch} -a -installsuffix nocgo -ldflags \
+		CGO_ENABLED=0 GOOS=linux GOARCH=$${arch} go build -o $(SERVICE_NAME)-go.$${arch} -a -installsuffix nocgo -ldflags \
 			"-X 'github.com/OceanCodes/common/services.Version=$(TAG)' \
 			-X 'github.com/OceanCodes/common/services.Commit=$(COMMIT)'" \
 			.; \
 	done && \
-	cp $(SERVICE_NAME).amd64 $(SERVICE_NAME)
+	cp $(SERVICE_NAME)-go.amd64 $(SERVICE_NAME)-go
 
 .PHONY: client
 client:
