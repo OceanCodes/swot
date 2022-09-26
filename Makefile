@@ -1,46 +1,61 @@
-.PHONY: all service test image image-branch ecr-login push push-branch lint
-
-all: service test
-
 SHELL := /bin/bash
-IMAGE_NAME = codeocean/swot
+SERVICE_NAME := swot
+IMAGE_NAME := codeocean/$(SERVICE_NAME)
 REGISTRY ?= 524950183868.dkr.ecr.us-east-1.amazonaws.com
 TAG ?= $(shell ./make-tag.sh)
-BRANCH ?= $(CIRCLE_BRANCH)
-DIR = lib
+COMMIT ?= $(if $(CIRCLE_SHA1),$(CIRCLE_SHA1),$(shell git rev-parse --verify HEAD))
+BRANCH ?= $(if $(CIRCLE_BRANCH),$(CIRCLE_BRANCH),$(shell git rev-parse --abbrev-ref HEAD))
+IMAGE_TAG = $(REGISTRY)/$(IMAGE_NAME):$(TAG)
+TAGS := -t $(IMAGE_TAG)
+ifeq ($(BRANCH),master)
+	TAGS := $(TAGS) -t $(REGISTRY)/$(IMAGE_NAME):latest
+else ifeq ($(BRANCH),main)
+	TAGS := $(TAGS) -t $(REGISTRY)/$(IMAGE_NAME):latest
+endif
 
+.PHONY: all
+all: service client test
+
+.PHONY: show-tag
+show-tag:
+	@echo $(TAG)
+
+.PHONY: service
 service:
-	cd $(DIR) && \
-	CGO_ENABLED=0 go build -a -installsuffix nocgo -o swot-go .
+	cd lib && \
+	for arch in amd64 arm64; do \
+		CGO_ENABLED=0 GOOS=linux GOARCH=$${arch} go build -o $(SERVICE_NAME).$${arch} -a -installsuffix nocgo -ldflags \
+			"-X 'github.com/OceanCodes/common/services.Version=$(TAG)' \
+			-X 'github.com/OceanCodes/common/services.Commit=$(COMMIT)'" \
+			.; \
+	done && \
+	cp $(SERVICE_NAME).amd64 $(SERVICE_NAME)
 
+.PHONY: client
+client:
+	if [ -d "client" ]; then \
+		cd client && \
+		go build; \
+	fi
+
+.PHONY: test
 test:
-	cd $(DIR) && \
-	go test -v
-
-image:
-	cd $(DIR) && \
-	docker build -t $(IMAGE_NAME) .
-	docker tag $(IMAGE_NAME):latest $(REGISTRY)/$(IMAGE_NAME):latest
-	if [ -n "$(TAG)" ]; then docker tag $(IMAGE_NAME):latest $(REGISTRY)/$(IMAGE_NAME):$(TAG); fi
-
-image-branch:
-	if [ -n "$(BRANCH)" ]; then \
-		cd $(DIR) && docker build -t $(REGISTRY)/$(IMAGE_NAME):$(BRANCH) .; \
+	if [ -d "test" ]; then \
+		cd test && \
+		go test -v; \
 	fi
 
+.PHONY: image
+image: ecr-login
+	cd lib && \
+	docker context create ctx && \
+	docker buildx create --name multiarch-builder --driver docker-container --use ctx && \
+	docker buildx build --push --platform linux/amd64,linux/arm64 $(TAGS) .
+
+.PHONY: ecr-login
 ecr-login:
-	`aws ecr get-login --region us-east-1 --no-include-email`
+	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(REGISTRY)
 
-push: ecr-login
-	if [ -n "$(TAG)" ]; then \
-		docker push $(REGISTRY)/$(IMAGE_NAME):latest; \
-		docker push $(REGISTRY)/$(IMAGE_NAME):$(TAG); \
-	fi
-
-push-branch: ecr-login
-	if [ -n "$(BRANCH)" ]; then \
-		docker push $(REGISTRY)/$(IMAGE_NAME):$(BRANCH); \
-	fi
-
+.PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run $(LINTFLAGS)

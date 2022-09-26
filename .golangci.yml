@@ -4,6 +4,11 @@ linters:
     - gofmt
     - goimports
 
+# options for analysis running
+run:
+  # timeout for analysis, e.g. 30s, 5m, default is 1m
+  timeout: 2m
+
 issues:
   exclude-use-default: false
 
