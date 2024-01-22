@@ -156,7 +156,6 @@ class Swot
     edu.np
     edu.om
     edu.pa
-    edu.pe
     edu.ph
     edu.pk
     edu.pr
