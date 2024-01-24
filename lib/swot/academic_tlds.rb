@@ -95,7 +95,6 @@ class Swot
     edu.ar
     edu.au
     edu.az
-    edu.ba
     edu.bb
     edu.bd
     edu.bh
@@ -108,13 +107,10 @@ class Swot
     edu.bz
     edu.ck
     edu.cn
-    edu.co
     edu.cu
     edu.do
     edu.dz
-    edu.ec
     edu.ee
-    edu.eg
     edu.er
     edu.es
     edu.et
@@ -156,8 +152,6 @@ class Swot
     edu.np
     edu.om
     edu.pa
-    edu.ph
-    edu.pk
     edu.pr
     edu.ps
     edu.pt
@@ -174,13 +168,11 @@ class Swot
     edu.sl
     edu.sv
     edu.sy
-    edu.tr
     edu.tt
     edu.tw
     edu.ua
     edu.uy
     edu.ve
-    edu.vn
     edu.ws
     edu.ye
     edu.zm
