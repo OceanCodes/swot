@@ -8,7 +8,7 @@ COMMIT ?= $(if $(CIRCLE_SHA1),$(CIRCLE_SHA1),$(shell git rev-parse --verify HEAD
 BRANCH ?= $(if $(CIRCLE_BRANCH),$(CIRCLE_BRANCH),$(shell git rev-parse --abbrev-ref HEAD))
 PROD_IMAGE_TAG = $(PROD_REGISTRY)/$(IMAGE_NAME):$(TAG)
 BUILD_IMAGE_TAG = $(BUILD_REGISTRY)/$(IMAGE_NAME):$(TAG)
-TAGS := -t PROD_IMAGE_TAG -t BUILD_IMAGE_TAG
+TAGS := -t $(PROD_IMAGE_TAG) -t $(BUILD_IMAGE_TAG)
 ifeq ($(BRANCH),master)
 	TAGS := $(TAGS) -t $(PROD_REGISTRY)/$(IMAGE_NAME):latest -t $(BUILD_REGISTRY)/$(IMAGE_NAME):latest
 else ifeq ($(BRANCH),main)
