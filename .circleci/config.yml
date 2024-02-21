@@ -9,6 +9,7 @@ workflows:
        - build:
            context:
             - aws-creds
+            - aws-build-creds
             - circleci-creds
             - slack-creds
 

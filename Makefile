@@ -1,16 +1,18 @@
 SHELL := /bin/bash
 SERVICE_NAME := swot
 IMAGE_NAME := codeocean/$(SERVICE_NAME)
-REGISTRY ?= 524950183868.dkr.ecr.us-east-1.amazonaws.com
+PROD_REGISTRY ?= 524950183868.dkr.ecr.us-east-1.amazonaws.com
+BUILD_REGISTRY ?= 590183797266.dkr.ecr.us-east-1.amazonaws.com
 TAG ?= $(shell ./make-tag.sh)
 COMMIT ?= $(if $(CIRCLE_SHA1),$(CIRCLE_SHA1),$(shell git rev-parse --verify HEAD))
 BRANCH ?= $(if $(CIRCLE_BRANCH),$(CIRCLE_BRANCH),$(shell git rev-parse --abbrev-ref HEAD))
-IMAGE_TAG = $(REGISTRY)/$(IMAGE_NAME):$(TAG)
-TAGS := -t $(IMAGE_TAG)
+PROD_IMAGE_TAG = $(PROD_REGISTRY)/$(IMAGE_NAME):$(TAG)
+BUILD_IMAGE_TAG = $(BUILD_REGISTRY)/$(IMAGE_NAME):$(TAG)
+TAGS := -t PROD_IMAGE_TAG -t BUILD_IMAGE_TAG
 ifeq ($(BRANCH),master)
-	TAGS := $(TAGS) -t $(REGISTRY)/$(IMAGE_NAME):latest
+	TAGS := $(TAGS) -t $(PROD_REGISTRY)/$(IMAGE_NAME):latest -t $(BUILD_REGISTRY)/$(IMAGE_NAME):latest
 else ifeq ($(BRANCH),main)
-	TAGS := $(TAGS) -t $(REGISTRY)/$(IMAGE_NAME):latest
+	TAGS := $(TAGS) -t $(PROD_REGISTRY)/$(IMAGE_NAME):latest -t $(BUILD_REGISTRY)/$(IMAGE_NAME):latest
 endif
 
 .PHONY: all
@@ -54,7 +56,10 @@ image: ecr-login
 
 .PHONY: ecr-login
 ecr-login:
-	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(REGISTRY)
+	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(PROD_REGISTRY)
+	AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_BUILD} \
+		AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_BUILD} \
+		aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(BUILD_REGISTRY)
 
 .PHONY: lint
 lint:
