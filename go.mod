@@ -10,6 +10,7 @@ require (
 
 replace (
 	github.com/gin-gonic/gin => github.com/gin-gonic/gin v1.9.1
+	golang.org/x/crypto => golang.org/x/crypto v0.0.0-20211202192323-5770296d904e
 	golang.org/x/net => golang.org/x/net v0.23.0
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
 	golang.org/x/text => golang.org/x/text v0.3.8
