@@ -32,10 +32,3 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace (
-	golang.org/x/net => golang.org/x/net v0.7.0
-	golang.org/x/sys => golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
-	golang.org/x/text => golang.org/x/text v0.3.8
-	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.2.8
-)
