@@ -16,7 +16,7 @@ workflows:
 jobs:
   build:
     docker:
-      - image: codeocean/build-golang:1.16
+      - image: codeocean/build-golang:1.22.4
 
     working_directory: /go/src/github.com/OceanCodes/swot
 
@@ -25,8 +25,7 @@ jobs:
 
     steps:
       - checkout
-      - setup_remote_docker:
-          version: 20.10.11
+      - setup_remote_docker
       - run: mkdir -p $TEST_RESULTS
 
       - run:
