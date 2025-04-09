@@ -57,9 +57,8 @@ image: ecr-login
 .PHONY: ecr-login
 ecr-login:
 	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(PROD_REGISTRY)
-	AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID_BUILD} \
-		AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY_BUILD} \
-		aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(BUILD_REGISTRY)
+
+	aws --profile build-cicd ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(BUILD_REGISTRY)
 
 .PHONY: lint
 lint:

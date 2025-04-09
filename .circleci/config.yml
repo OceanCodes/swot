@@ -1,6 +1,7 @@
 version: 2.1
 
 orbs:
+  aws-cli: circleci/aws-cli@5.1.1
   slack: circleci/slack@4.4
 
 workflows:
@@ -8,8 +9,7 @@ workflows:
      jobs:
        - build:
            context:
-            - aws-creds
-            - aws-build-creds
+            - aws
             - circleci-creds
             - slack-creds
 
@@ -26,6 +26,18 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+      - aws-cli/setup:
+          profile_name: default
+          role_arn: $PROD_ROLE
+          role_session_name: cicd-role-session
+          region: us-east-1
+
+      - aws-cli/setup:
+          profile_name: build-cicd
+          role_arn: $BUILD_ROLE
+          role_session_name: cicd-role-session
+          region: us-east-1
+
       - run: mkdir -p $TEST_RESULTS
 
       - run:
