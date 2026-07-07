@@ -26,7 +26,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("HEALTHCHECK failed: %v", err)
 		}
-		defer resp.Body.Close()
+		resp.Body.Close()
 		if resp.StatusCode != http.StatusNoContent {
 			log.Fatalf("HEALTHCHECK unhealthy: %d", resp.StatusCode)
 		}
