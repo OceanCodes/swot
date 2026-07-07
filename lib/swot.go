@@ -20,6 +20,19 @@ var whitelist, blacklist map[string]struct{}
 
 func main() {
 
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		client := &http.Client{Timeout: 4 * time.Second}
+		resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/mit.edu", port))
+		if err != nil {
+			log.Fatalf("HEALTHCHECK failed: %v", err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusNoContent {
+			log.Fatalf("HEALTHCHECK unhealthy: %d", resp.StatusCode)
+		}
+		os.Exit(0)
+	}
+
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 	log.Println("swot INFO [STARTUP] Starting SWOT Service...")
 	log.Println("swot INFO [STARTUP] Listening and serving HTTP on " + fmt.Sprintf(":%v", port))
