@@ -1,18 +1,16 @@
 SHELL := /bin/bash
 SERVICE_NAME := swot
 IMAGE_NAME := codeocean/$(SERVICE_NAME)
-PROD_REGISTRY ?= 524950183868.dkr.ecr.us-east-1.amazonaws.com
 BUILD_REGISTRY ?= 590183797266.dkr.ecr.us-east-1.amazonaws.com
 TAG ?= $(shell ./make-tag.sh)
 COMMIT ?= $(if $(CIRCLE_SHA1),$(CIRCLE_SHA1),$(shell git rev-parse --verify HEAD))
 BRANCH ?= $(if $(CIRCLE_BRANCH),$(CIRCLE_BRANCH),$(shell git rev-parse --abbrev-ref HEAD))
-PROD_IMAGE_TAG = $(PROD_REGISTRY)/$(IMAGE_NAME):$(TAG)
 BUILD_IMAGE_TAG = $(BUILD_REGISTRY)/$(IMAGE_NAME):$(TAG)
-TAGS := -t $(PROD_IMAGE_TAG) -t $(BUILD_IMAGE_TAG)
+TAGS := -t $(BUILD_IMAGE_TAG)
 ifeq ($(BRANCH),master)
-	TAGS := $(TAGS) -t $(PROD_REGISTRY)/$(IMAGE_NAME):latest -t $(BUILD_REGISTRY)/$(IMAGE_NAME):latest
+	TAGS := $(TAGS) -t $(BUILD_REGISTRY)/$(IMAGE_NAME):latest
 else ifeq ($(BRANCH),main)
-	TAGS := $(TAGS) -t $(PROD_REGISTRY)/$(IMAGE_NAME):latest -t $(BUILD_REGISTRY)/$(IMAGE_NAME):latest
+	TAGS := $(TAGS) -t $(BUILD_REGISTRY)/$(IMAGE_NAME):latest
 endif
 
 .PHONY: all
@@ -56,8 +54,6 @@ image: ecr-login
 
 .PHONY: ecr-login
 ecr-login:
-	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(PROD_REGISTRY)
-
 	aws --profile build-cicd ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(BUILD_REGISTRY)
 
 .PHONY: lint
